@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src/map --cov-report=term-missing"

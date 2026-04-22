@@ -1,4 +1,3 @@
-# Partially or wholly AI-generated with Claude (claude-sonnet-4-6) via Claude Code on 2026-04-22 — https://claude.ai/code
 import pytest
 from pathlib import Path
 from PIL import Image

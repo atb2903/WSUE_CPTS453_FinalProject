@@ -39,6 +39,7 @@ pytest
 - **Design & architecture patterns**: Apply appropriate design patterns (e.g. Builder, Strategy, Repository) and architecture patterns (e.g. layered architecture, separation of concerns) wherever they improve clarity or extensibility.
 - **100% test coverage, all tests passing**: After every change, run `pytest` and confirm all tests pass with 100% coverage on `src/map`. Do not leave the codebase in a state where tests fail or coverage drops.
 - **Readable code**: Use descriptive, self-explanatory names for variables, functions, classes, and modules. Add comments wherever the code is not self-documenting.
+- **Gitignore check**: After creating any file or directory, decide whether it should be tracked in git. If it is runtime, temporary, generated, or local-only, add it to `.gitignore` immediately.
 
 ## Architecture
 

@@ -20,5 +20,5 @@ class CampusGraph:
     nodes: list[Node] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
 
-    def get_node(self, id: int) -> Node | None:
-        return next((n for n in self.nodes if n.id == id), None)
+    def get_node(self, node_id: int) -> Node | None:
+        return next((n for n in self.nodes if n.id == node_id), None)

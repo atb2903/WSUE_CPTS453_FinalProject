@@ -45,3 +45,11 @@ def test_campus_graph_get_node_returns_matching_node():
 def test_campus_graph_get_node_returns_none_for_unknown_id():
     graph = CampusGraph()
     assert graph.get_node(99) is None
+
+
+def test_campus_graph_get_node_finds_correct_node_among_multiple():
+    node_a = Node(id=0, label="A", y=0.0, x=0.0)
+    node_b = Node(id=1, label="B", y=1.0, x=1.0)
+    node_c = Node(id=2, label="C", y=2.0, x=2.0)
+    graph = CampusGraph(nodes=[node_a, node_b, node_c])
+    assert graph.get_node(1) is node_b

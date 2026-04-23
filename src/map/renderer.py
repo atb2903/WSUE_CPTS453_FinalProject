@@ -4,6 +4,10 @@ import folium
 from folium.raster_layers import ImageOverlay
 from PIL import Image
 
+# The campus map exceeds PIL's default 89 MP decompression bomb limit.
+# It is a known local asset, so raise the limit to accommodate it.
+Image.MAX_IMAGE_PIXELS = 200_000_000
+
 
 class CampusMapRenderer:
     """

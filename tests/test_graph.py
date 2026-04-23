@@ -53,3 +53,26 @@ def test_campus_graph_get_node_finds_correct_node_among_multiple():
     node_c = Node(id=2, label="C", y=2.0, x=2.0)
     graph = CampusGraph(nodes=[node_a, node_b, node_c])
     assert graph.get_node(1) is node_b
+
+
+def test_add_node_appends_and_indexes_node():
+    graph = CampusGraph()
+    node = Node(id=0, label="A", y=0.0, x=0.0)
+    graph.add_node(node)
+    assert node in graph.nodes
+    assert graph.get_node(0) is node
+
+
+def test_add_node_raises_on_duplicate_id():
+    graph = CampusGraph()
+    node = Node(id=0, label="A", y=0.0, x=0.0)
+    graph.add_node(node)
+    with pytest.raises(ValueError, match="already exists"):
+        graph.add_node(Node(id=0, label="B", y=1.0, x=1.0))
+
+
+def test_add_edge_appends_edge():
+    graph = CampusGraph()
+    edge = Edge(from_id=0, to_id=1)
+    graph.add_edge(edge)
+    assert edge in graph.edges

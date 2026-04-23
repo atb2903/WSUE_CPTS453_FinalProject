@@ -19,6 +19,24 @@ class Edge:
 class CampusGraph:
     nodes: list[Node] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
+    # Internal index for O(1) node lookup; kept in sync by add_node
+    _node_index: dict[int, Node] = field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        self._node_index = {n.id: n for n in self.nodes}
+
+    def add_node(self, node: Node) -> None:
+        """Add a node, raising ValueError if its id already exists."""
+        if node.id in self._node_index:
+            raise ValueError(f"Node with id {node.id} already exists")
+        self.nodes.append(node)
+        self._node_index[node.id] = node
+
+    def add_edge(self, edge: Edge) -> None:
+        """Append an edge to the graph."""
+        self.edges.append(edge)
 
     def get_node(self, node_id: int) -> Node | None:
-        return next((n for n in self.nodes if n.id == node_id), None)
+        return self._node_index.get(node_id)

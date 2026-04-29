@@ -60,7 +60,7 @@ class CampusMapRenderer:
           only visual content.
         - zoom_start=-5: fallback zoom before fit_bounds runs; negative
           values are required for large images because zoom 0 is native
-          pixel resolution (e.g. 13200×10200 px would overflow any viewport).
+          pixel resolution (e.g. 13200 x 10200 px would overflow any viewport).
         - minZoom/maxZoom are passed as camelCase kwargs because folium's
           min_zoom/max_zoom parameters target tile layers, not the Leaflet
           Map object itself, and are silently ignored for CRS.Simple maps.

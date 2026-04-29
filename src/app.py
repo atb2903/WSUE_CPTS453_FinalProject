@@ -8,36 +8,77 @@ from map.graph import CampusGraph, Edge, Node
 from map.graph_renderer import GraphOverlayRenderer
 from map.renderer import CampusMapRenderer
 
-# Path to the campus map image asset, relative to the project root
 _IMAGE_PATH = Path("assets/map.png")
 
-# Wide layout maximises the available map viewport area
 st.set_page_config(page_title="WSU Map Viewer", layout="wide")
 st.title("WSU Map Viewer")
-st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
 
-# Stop early with a clear error rather than letting folium fail silently
 if not _IMAGE_PATH.exists():
     st.error(f"Map image not found at: {_IMAGE_PATH}")
     st.stop()
 
-# PIL returns (width, height); CRS.Simple uses [y, x] = [lat, lng]
 Image.MAX_IMAGE_PIXELS = 200_000_000
 with Image.open(_IMAGE_PATH) as img:
     image_width, image_height = img.size
 
+# --- Session state ---
+if "graph" not in st.session_state:
+    st.session_state.graph = CampusGraph(
+        nodes=[
+            Node(id=0, label="Node A", y=image_height * 0.9, x=image_width * 0.1),
+            Node(id=1, label="Node B", y=image_height * 0.1, x=image_width * 0.9),
+        ],
+        edges=[Edge(from_id=0, to_id=1)],
+    )
+if "selected_node_id" not in st.session_state:
+    st.session_state.selected_node_id = None
+if "last_object_clicked" not in st.session_state:
+    st.session_state.last_object_clicked = None
+if "last_map_click" not in st.session_state:
+    st.session_state.last_map_click = None
+
+mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation")
+
+graph: CampusGraph = st.session_state.graph
 campus_map = CampusMapRenderer(_IMAGE_PATH).build()
 
-# Dummy graph: two nodes at opposite corners, one connecting edge
-dummy_graph = CampusGraph(
-    nodes=[
-        Node(id=0, label="Node A", y=image_height * 0.9, x=image_width * 0.1),
-        Node(id=1, label="Node B", y=image_height * 0.1, x=image_width * 0.9),
-    ],
-    edges=[Edge(from_id=0, to_id=1)],
-)
-GraphOverlayRenderer(dummy_graph).render_onto(campus_map)
+if mode == "Navigation":
+    st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
+    GraphOverlayRenderer(graph).render_onto(campus_map)
+    st_folium(campus_map, width=None, height=760, returned_objects=[])
 
-# returned_objects=[] prevents Streamlit from re-running the script on every
-# pan or zoom interaction, which would otherwise reset the map viewport state
-st_folium(campus_map, width=None, height=760, returned_objects=[])
+else:  # Edit
+    selected_id: int | None = st.session_state.selected_node_id
+    selected_node = graph.get_node(selected_id) if selected_id is not None else None
+    if selected_node is not None:
+        st.caption(f"'{selected_node.label}' selected — click the map to move it.")
+    else:
+        st.caption("Click a node to select it, then click the map to move it.")
+
+    GraphOverlayRenderer(graph).render_onto(campus_map, selected_node_id=selected_id)
+    map_data = st_folium(
+        campus_map,
+        width=None,
+        height=760,
+        returned_objects=["last_object_clicked", "last_object_clicked_tooltip", "last_clicked"],
+    )
+
+    obj_clicked = map_data.get("last_object_clicked")
+    tooltip = map_data.get("last_object_clicked_tooltip")
+    map_click = map_data.get("last_clicked")
+
+    new_node_click = obj_clicked != st.session_state.last_object_clicked
+    new_map_click = map_click != st.session_state.last_map_click
+
+    # Node click takes priority over map click if both changed in the same rerun
+    if new_node_click and tooltip:
+        matching = next((n for n in graph.nodes if n.label == tooltip), None)
+        if matching is not None:
+            st.session_state.last_object_clicked = obj_clicked
+            st.session_state.selected_node_id = matching.id
+            st.rerun()
+    elif new_map_click and selected_id is not None and map_click:
+        graph.move_node(selected_id, y=map_click["lat"], x=map_click["lng"])
+        st.session_state.last_map_click = map_click
+        st.session_state.selected_node_id = None
+        st.rerun()

@@ -61,3 +61,26 @@ def test_render_onto_empty_graph_adds_nothing():
     GraphOverlayRenderer(CampusGraph()).render_onto(campus_map)
     after = set(campus_map._children.keys())
     assert before == after
+
+
+def test_selected_node_renders_in_wsu_crimson():
+    campus_map = _make_base_map()
+    GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, selected_node_id=0)
+    markers = _children_of_type(campus_map, CircleMarker)
+    crimson = [m for m in markers if m.options["color"] == "#981e32"]
+    assert len(crimson) == 1
+
+
+def test_unselected_nodes_render_in_wsu_gray():
+    campus_map = _make_base_map()
+    GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, selected_node_id=0)
+    markers = _children_of_type(campus_map, CircleMarker)
+    gray = [m for m in markers if m.options["color"] == "#717c7d"]
+    assert len(gray) == 1
+
+
+def test_no_selection_all_nodes_render_in_wsu_gray():
+    campus_map = _make_base_map()
+    GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map)
+    markers = _children_of_type(campus_map, CircleMarker)
+    assert all(m.options["color"] == "#717c7d" for m in markers)

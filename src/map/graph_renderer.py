@@ -2,7 +2,8 @@ import folium
 
 from map.graph import CampusGraph
 
-_COLOR = "#717c7d"  # WSU gray; crimson (#981e32) reserved for selected elements
+_WSU_GRAY = "#717c7d"
+_WSU_CRIMSON = "#981e32"
 _NODE_RADIUS = 8
 _EDGE_WEIGHT = 3
 
@@ -18,10 +19,12 @@ class GraphOverlayRenderer:
     def __init__(self, graph: CampusGraph) -> None:
         self._graph = graph
 
-    def render_onto(self, campus_map: folium.Map) -> None:
+    def render_onto(
+        self, campus_map: folium.Map, selected_node_id: int | None = None
+    ) -> None:
         """Draw the graph overlay onto campus_map in-place."""
         self._draw_edges(campus_map)
-        self._draw_nodes(campus_map)
+        self._draw_nodes(campus_map, selected_node_id)
 
     def _draw_edges(self, campus_map: folium.Map) -> None:
         for edge in self._graph.edges:
@@ -31,16 +34,19 @@ class GraphOverlayRenderer:
                 continue
             folium.PolyLine(
                 locations=[[from_node.y, from_node.x], [to_node.y, to_node.x]],
-                color=_COLOR,
+                color=_WSU_GRAY,
                 weight=_EDGE_WEIGHT,
             ).add_to(campus_map)
 
-    def _draw_nodes(self, campus_map: folium.Map) -> None:
+    def _draw_nodes(
+        self, campus_map: folium.Map, selected_node_id: int | None
+    ) -> None:
         for node in self._graph.nodes:
+            color = _WSU_CRIMSON if node.id == selected_node_id else _WSU_GRAY
             folium.CircleMarker(
                 location=[node.y, node.x],
                 radius=_NODE_RADIUS,
-                color=_COLOR,
+                color=color,
                 fill=True,
                 fill_opacity=1.0,
                 tooltip=node.label,

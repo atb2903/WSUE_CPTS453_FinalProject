@@ -29,10 +29,29 @@ def test_render_onto_adds_one_circle_marker_per_node():
     assert len(_children_of_type(campus_map, CircleMarker)) == 2
 
 
+def test_circle_marker_location_matches_node_coordinates():
+    fg = folium.FeatureGroup()
+    graph = CampusGraph(nodes=[Node(id=0, y=123.0, x=456.0)])
+    GraphOverlayRenderer(graph).render_onto(fg)
+    markers = _children_of_type(fg, CircleMarker)
+    assert markers[0].location == [123.0, 456.0]
+
+
 def test_render_onto_adds_one_polyline_per_edge():
     campus_map = _make_base_map()
     GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map)
     assert len(_children_of_type(campus_map, PolyLine)) == 1
+
+
+def test_polyline_locations_match_node_coordinates():
+    fg = folium.FeatureGroup()
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=10.0, x=20.0)],
+        edges=[Edge(from_id=0, to_id=1)],
+    )
+    GraphOverlayRenderer(graph).render_onto(fg)
+    lines = _children_of_type(fg, PolyLine)
+    assert lines[0].locations == [[0.0, 0.0], [10.0, 20.0]]
 
 
 def test_render_onto_skips_edge_with_unknown_from_id():
@@ -63,18 +82,25 @@ def test_render_onto_empty_graph_adds_nothing():
     assert before == after
 
 
+def _tooltip_text(marker: CircleMarker) -> str:
+    tooltips = [c for c in marker._children.values() if isinstance(c, folium.Tooltip)]
+    return tooltips[0].text if tooltips else ""
+
+
 def test_highlighted_node_renders_in_wsu_crimson():
     campus_map = _make_base_map()
     GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, highlighted_node_id=0)
     markers = _children_of_type(campus_map, CircleMarker)
-    assert len([m for m in markers if m.options["color"] == "#981e32"]) == 1
+    highlighted = next(m for m in markers if _tooltip_text(m) == "0")
+    assert highlighted.options["color"] == "#981e32"
 
 
 def test_unhighlighted_nodes_render_in_wsu_gray():
     campus_map = _make_base_map()
     GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, highlighted_node_id=0)
     markers = _children_of_type(campus_map, CircleMarker)
-    assert len([m for m in markers if m.options["color"] == "#717c7d"]) == 1
+    unhighlighted = next(m for m in markers if _tooltip_text(m) == "1")
+    assert unhighlighted.options["color"] == "#717c7d"
 
 
 def test_no_highlight_all_nodes_render_in_wsu_gray():

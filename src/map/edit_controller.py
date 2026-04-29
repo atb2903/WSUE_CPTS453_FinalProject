@@ -56,6 +56,19 @@ class EditController:
         if new_node_click and tooltip:
             node = self._node_from_tooltip(tooltip)
             if node is not None:
+                # Only leaf nodes (degree ≤ 1) may be selected for moving.
+                # When connecting a pending node, any target is valid regardless of degree.
+                non_selectable = (
+                    self._edit_state.state != State.PENDING_NODE
+                    and self._graph.degree(node.id) > 1
+                )
+                if non_selectable:
+                    return EditState(
+                        state=self._edit_state.state,
+                        active_node_id=self._edit_state.active_node_id,
+                        last_object_clicked=obj_clicked,
+                        last_map_click=map_click,
+                    )
                 return self._handle_node_click(node, obj_clicked, map_click)
             # Unknown tooltip: consume both clicks to prevent a ghost map-click on the next rerun
             return EditState(
@@ -109,6 +122,13 @@ class EditController:
             last_map_click=map_click,
         )
 
+    def _from_map_click(self, **fields) -> EditState:
+        # streamlit-folium only updates last_object_clicked when a Folium object is
+        # clicked, never on empty-space clicks. Centralising here ensures every map-click
+        # handler carries the value forward automatically; forgetting to do so causes ghost
+        # node-click events on the next Streamlit rerun.
+        return EditState(last_object_clicked=self._edit_state.last_object_clicked, **fields)
+
     def _handle_map_click(self, map_click: dict) -> EditState:
         state = self._edit_state.state
         if state == State.NODE_SELECTED:
@@ -117,7 +137,7 @@ class EditController:
                 y=map_click["lat"],
                 x=map_click["lng"],
             )
-            return EditState(state=State.IDLE, last_map_click=map_click)
+            return self._from_map_click(state=State.IDLE, last_map_click=map_click)
         if state == State.PENDING_NODE:
             return self._create_connected_node(map_click)
         # IDLE: create new node, enter pending
@@ -126,7 +146,7 @@ class EditController:
     def _create_pending_node(self, map_click: dict) -> EditState:
         new_id = self._graph.next_node_id()
         self._graph.add_node(Node(id=new_id, y=map_click["lat"], x=map_click["lng"]))
-        return EditState(
+        return self._from_map_click(
             state=State.PENDING_NODE,
             active_node_id=new_id,
             last_map_click=map_click,
@@ -136,4 +156,4 @@ class EditController:
         new_id = self._graph.next_node_id()
         self._graph.add_node(Node(id=new_id, y=map_click["lat"], x=map_click["lng"]))
         self._graph.add_edge(Edge(from_id=self._edit_state.active_node_id, to_id=new_id))
-        return EditState(state=State.IDLE, last_map_click=map_click)
+        return self._from_map_click(state=State.IDLE, last_map_click=map_click)

@@ -96,10 +96,51 @@ def test_move_node_preserves_id():
     assert updated.id == 7
 
 
+def test_move_node_does_not_affect_other_nodes():
+    graph = CampusGraph(nodes=[
+        Node(id=0, y=0.0, x=0.0),
+        Node(id=1, y=5.0, x=5.0),
+        Node(id=2, y=10.0, x=10.0),
+    ])
+    graph.move_node(1, y=99.0, x=99.0)
+    assert graph.get_node(0).y == 0.0
+    assert graph.get_node(0).x == 0.0
+    assert graph.get_node(2).y == 10.0
+    assert graph.get_node(2).x == 10.0
+
+
 def test_move_node_raises_key_error_for_unknown_id():
     graph = CampusGraph()
     with pytest.raises(KeyError):
         graph.move_node(99, y=1.0, x=1.0)
+
+
+def test_degree_isolated_node_is_zero():
+    graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0)])
+    assert graph.degree(0) == 0
+
+
+def test_degree_counts_from_id_and_to_id():
+    """An edge A→B contributes 1 to the degree of both A (from_id) and B (to_id)."""
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0)],
+        edges=[Edge(from_id=0, to_id=1)],
+    )
+    assert graph.degree(0) == 1
+    assert graph.degree(1) == 1
+
+
+def test_degree_non_leaf_node():
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0), Node(id=2, y=2.0, x=2.0)],
+        edges=[Edge(from_id=0, to_id=1), Edge(from_id=2, to_id=1)],
+    )
+    assert graph.degree(1) == 2
+
+
+def test_degree_unknown_node_id_returns_zero():
+    graph = CampusGraph()
+    assert graph.degree(99) == 0
 
 
 def test_next_node_id_returns_zero_for_empty_graph():

@@ -50,3 +50,7 @@ class CampusGraph:
     def next_node_id(self) -> int:
         """Return the next sequential node ID (max existing ID + 1, or 0 if empty)."""
         return max((n.id for n in self.nodes), default=-1) + 1
+
+    def degree(self, node_id: int) -> int:
+        """Return the number of edges incident to node_id (undirected count)."""
+        return sum(1 for e in self.edges if e.from_id == node_id or e.to_id == node_id)

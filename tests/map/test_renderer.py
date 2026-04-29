@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from PIL import Image
 import folium
+from folium.map import FitBounds
 from folium.raster_layers import ImageOverlay
 
 from map.renderer import CampusMapRenderer
@@ -29,7 +30,6 @@ def test_build_center_is_image_midpoint(image_path):
 
 def test_build_adds_image_overlay(image_path):
     result = CampusMapRenderer(image_path).build()
-    # folium stores all map children (overlays, layers, etc.) in _children
     overlays = [c for c in result._children.values() if isinstance(c, ImageOverlay)]
     assert len(overlays) == 1
 
@@ -47,3 +47,12 @@ def test_build_overlay_image_is_encoded(image_path):
     result = CampusMapRenderer(image_path).build()
     overlay = next(c for c in result._children.values() if isinstance(c, ImageOverlay))
     assert overlay.url.startswith("data:image/png")
+
+
+def test_build_calls_fit_bounds_with_image_bounds(image_path):
+    # fit_bounds is a key design decision — it overrides zoom_start so the
+    # full image is always visible on load regardless of browser container size
+    result = CampusMapRenderer(image_path).build()
+    fit = next((c for c in result._children.values() if isinstance(c, FitBounds)), None)
+    assert fit is not None, "fit_bounds was not called"
+    assert fit.bounds == [[0, 0], [600, 800]]

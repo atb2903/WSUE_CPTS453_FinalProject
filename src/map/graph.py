@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 
 @dataclass(frozen=True)
@@ -40,3 +40,10 @@ class CampusGraph:
 
     def get_node(self, node_id: int) -> Node | None:
         return self._node_index.get(node_id)
+
+    def move_node(self, node_id: int, y: float, x: float) -> None:
+        """Replace a node's position, raising KeyError if node_id is unknown."""
+        existing = self._node_index[node_id]
+        updated = replace(existing, y=y, x=x)
+        self.nodes[self.nodes.index(existing)] = updated
+        self._node_index[node_id] = updated

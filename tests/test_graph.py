@@ -76,3 +76,29 @@ def test_add_edge_appends_edge():
     edge = Edge(from_id=0, to_id=1)
     graph.add_edge(edge)
     assert edge in graph.edges
+
+
+def test_move_node_updates_position_in_index_and_list():
+    node = Node(id=0, label="A", y=0.0, x=0.0)
+    graph = CampusGraph(nodes=[node])
+    graph.move_node(0, y=500.0, x=300.0)
+    updated = graph.get_node(0)
+    assert updated.y == 500.0
+    assert updated.x == 300.0
+    assert graph.nodes[0].y == 500.0
+    assert graph.nodes[0].x == 300.0
+
+
+def test_move_node_preserves_id_and_label():
+    node = Node(id=7, label="Campus Loc", y=0.0, x=0.0)
+    graph = CampusGraph(nodes=[node])
+    graph.move_node(7, y=100.0, x=200.0)
+    updated = graph.get_node(7)
+    assert updated.id == 7
+    assert updated.label == "Campus Loc"
+
+
+def test_move_node_raises_key_error_for_unknown_id():
+    graph = CampusGraph()
+    with pytest.raises(KeyError):
+        graph.move_node(99, y=1.0, x=1.0)

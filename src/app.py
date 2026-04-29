@@ -43,6 +43,7 @@ graph: CampusGraph = st.session_state.graph
 campus_map = CampusMapRenderer(_IMAGE_PATH).build()
 
 if mode == "Navigation":
+    st.session_state.selected_node_id = None
     st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
     GraphOverlayRenderer(graph).render_onto(campus_map)
     st_folium(campus_map, width=None, height=760, returned_objects=[])

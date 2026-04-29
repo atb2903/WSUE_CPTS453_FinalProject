@@ -37,9 +37,10 @@ pytest
 - **Consult docs**: Always look up the official documentation for any language or library before implementing or debugging behaviour that depends on its internals.
 - **SOLID principles**: Every design and refactor must respect Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion.
 - **Design & architecture patterns**: Apply appropriate design patterns (e.g. Builder, Strategy, Repository) and architecture patterns (e.g. layered architecture, separation of concerns) wherever they improve clarity or extensibility.
-- **100% test coverage, all tests passing**: After every change, run `pytest` and confirm all tests pass with 100% coverage on `src/map`. Do not leave the codebase in a state where tests fail or coverage drops.
+- **100% test coverage, all tests passing**: After every change, run `pytest --cov=src/map --cov-branch` and confirm all tests pass with 100% line coverage and 100% branch coverage on `src/map`. Include boundary tests and integration tests. Do not leave the codebase in a state where tests fail or coverage drops.
 - **Readable code**: Use descriptive, self-explanatory names for variables, functions, classes, and modules. Add comments wherever the code is not self-documenting.
 - **Gitignore check**: After creating any file or directory, decide whether it should be tracked in git. If it is runtime, temporary, generated, or local-only, add it to `.gitignore` immediately.
+- **Maintain README**: Keep `README.md` at the project root up to date with current setup, run, and test instructions.
 
 ## Architecture
 

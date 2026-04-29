@@ -1,6 +1,6 @@
-# WSU Pullman Map Viewer
+# WSU-GPS
 
-Minimal Python app that displays `assets/map.png` on startup with pan and zoom interactions.
+Interactive campus map for WSU Pullman that overlays a graph of campus locations and walking routes. Graph traversal algorithms suggest optimal routes between locations. Built with Streamlit + Folium for CPTS 453 (Graph Theory) Spring 2026.
 
 ## Setup (Linux Mint)
 
@@ -30,5 +30,5 @@ Then open the local URL shown in the terminal.
 ## Tests
 
 ```bash
-pytest
+pytest --cov=src/map --cov-branch
 ```

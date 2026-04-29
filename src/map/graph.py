@@ -4,7 +4,6 @@ from dataclasses import dataclass, field, replace
 @dataclass(frozen=True)
 class Node:
     id: int
-    label: str
     y: float  # CRS.Simple pixel y-coordinate (Leaflet lat, origin bottom-left)
     x: float  # CRS.Simple pixel x-coordinate (Leaflet lng)
 
@@ -47,3 +46,7 @@ class CampusGraph:
         updated = replace(existing, y=y, x=x)
         self.nodes[self.nodes.index(existing)] = updated
         self._node_index[node_id] = updated
+
+    def next_node_id(self) -> int:
+        """Return the next sequential node ID (max existing ID + 1, or 0 if empty)."""
+        return max((n.id for n in self.nodes), default=-1) + 1

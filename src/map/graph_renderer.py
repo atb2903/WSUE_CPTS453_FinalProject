@@ -23,11 +23,11 @@ class GraphOverlayRenderer:
     def render_onto(
         self,
         parent: folium.Map | folium.FeatureGroup,
-        selected_node_id: int | None = None,
+        highlighted_node_id: int | None = None,
     ) -> None:
         """Draw the graph overlay onto parent in-place."""
         self._draw_edges(parent)
-        self._draw_nodes(parent, selected_node_id)
+        self._draw_nodes(parent, highlighted_node_id)
 
     def _draw_edges(self, parent: folium.Map | folium.FeatureGroup) -> None:
         for edge in self._graph.edges:
@@ -42,15 +42,15 @@ class GraphOverlayRenderer:
             ).add_to(parent)
 
     def _draw_nodes(
-        self, parent: folium.Map | folium.FeatureGroup, selected_node_id: int | None
+        self, parent: folium.Map | folium.FeatureGroup, highlighted_node_id: int | None
     ) -> None:
         for node in self._graph.nodes:
-            color = _WSU_CRIMSON if node.id == selected_node_id else _WSU_GRAY
+            color = _WSU_CRIMSON if node.id == highlighted_node_id else _WSU_GRAY
             folium.CircleMarker(
                 location=[node.y, node.x],
                 radius=_NODE_RADIUS,
                 color=color,
                 fill=True,
                 fill_opacity=1.0,
-                tooltip=node.label,
+                tooltip=str(node.id),
             ).add_to(parent)

@@ -105,6 +105,16 @@ class EditController:
             )
         return self._edit_state
 
+    def handle_deselect(self) -> EditState:
+        """Clear node/edge selection without mutating the graph."""
+        if self._edit_state.state not in {State.NODE_SELECTED, State.EDGE_SELECTED}:
+            return self._edit_state
+        return EditState(
+            state=State.IDLE,
+            last_object_clicked=self._edit_state.last_object_clicked,
+            last_map_click=self._edit_state.last_map_click,
+        )
+
     def _node_from_tooltip(self, tooltip: str) -> Node | None:
         try:
             return self._graph.get_node(int(tooltip))

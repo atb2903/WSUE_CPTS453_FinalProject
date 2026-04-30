@@ -59,6 +59,7 @@ else:  # Edit
     edit_state: EditState = st.session_state.edit_state
     st.caption(edit_state.caption)
     has_selection = edit_state.state in {State.NODE_SELECTED, State.EDGE_SELECTED}
+    deselect_clicked = st.button("Deselect", disabled=not has_selection)
     delete_clicked = st.button("Delete Selected", disabled=not has_selection)
     if st.button("Save Graph"):
         try:
@@ -83,6 +84,9 @@ else:  # Edit
     )
 
     new_edit_state = EditController(graph, edit_state).handle_click(map_data)
+
+    if deselect_clicked:
+        new_edit_state = EditController(graph, new_edit_state).handle_deselect()
 
     if delete_clicked:
         new_edit_state = EditController(graph, new_edit_state).handle_delete_selected()

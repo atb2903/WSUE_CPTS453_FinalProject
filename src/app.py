@@ -2,7 +2,6 @@ from pathlib import Path
 
 import folium
 import streamlit as st
-from PIL import Image
 from streamlit_folium import st_folium
 
 from map.edit_controller import EditController, EditState, State
@@ -12,7 +11,6 @@ from map.renderer import CampusMapRenderer
 
 _IMAGE_PATH = Path("assets/map.png")
 _GRAPH_PATH = Path("assets/graph.json")
-Image.MAX_IMAGE_PIXELS = 200_000_000
 
 st.set_page_config(page_title="WSU Map Viewer", layout="wide")
 st.title("WSU Map Viewer")
@@ -20,12 +18,6 @@ st.title("WSU Map Viewer")
 if not _IMAGE_PATH.exists():
     st.error(f"Map image not found at: {_IMAGE_PATH}")
     st.stop()
-
-
-@st.cache_data
-def _image_size(path: Path) -> tuple[int, int]:
-    with Image.open(path) as img:
-        return img.size
 
 
 def _load_graph_or_fallback(path: Path) -> CampusGraph:
@@ -41,15 +33,21 @@ if "graph" not in st.session_state:
     st.session_state.graph = _load_graph_or_fallback(_GRAPH_PATH)
 if "edit_state" not in st.session_state:
     st.session_state.edit_state = EditState()
+if "prev_mode" not in st.session_state:
+    st.session_state.prev_mode = None
 
 mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation")
 
 graph: CampusGraph = st.session_state.graph
 campus_map = CampusMapRenderer(_IMAGE_PATH).build()
 
-if mode == "Navigation":
-    # Reset edit state so re-entering Edit mode starts clean
+# Reset edit state only on the Edit -> Navigation transition so re-entering Edit
+# mode starts clean, without rebuilding state on every Navigation rerun.
+if mode == "Navigation" and st.session_state.prev_mode != "Navigation":
     st.session_state.edit_state = EditState()
+st.session_state.prev_mode = mode
+
+if mode == "Navigation":
     st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
     fg = folium.FeatureGroup()
     GraphOverlayRenderer(graph).render_onto(fg)

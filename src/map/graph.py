@@ -34,7 +34,18 @@ class CampusGraph:
         self._node_index[node.id] = node
 
     def add_edge(self, edge: Edge) -> None:
-        """Append an edge to the graph."""
+        """Append an edge to the graph, ignoring duplicates.
+
+        Edges are semantically undirected walking routes, so an Edge(a, b) is
+        rejected if an edge already exists between a and b in *either*
+        direction — adding a second one would render as a parallel line on
+        top of the first and would not represent a distinct route.
+        """
+        for existing in self.edges:
+            same_direction = existing.from_id == edge.from_id and existing.to_id == edge.to_id
+            reverse_direction = existing.from_id == edge.to_id and existing.to_id == edge.from_id
+            if same_direction or reverse_direction:
+                return
         self.edges.append(edge)
 
     def get_node(self, node_id: int) -> Node | None:
@@ -48,9 +59,15 @@ class CampusGraph:
         self._node_index[node_id] = updated
 
     def next_node_id(self) -> int:
-        """Return the next sequential node ID (max existing ID + 1, or 0 if empty)."""
+        """Return the next sequential node id (max existing id + 1, or 0 if empty)."""
         return max((n.id for n in self.nodes), default=-1) + 1
 
     def degree(self, node_id: int) -> int:
         """Return the number of edges incident to node_id (undirected count)."""
         return sum(1 for e in self.edges if e.from_id == node_id or e.to_id == node_id)
+
+    def remove_node(self, node_id: int) -> None:
+        """Remove a node and all its incident edges, raising KeyError if node_id is unknown."""
+        node = self._node_index.pop(node_id)
+        self.nodes.remove(node)
+        self.edges[:] = [e for e in self.edges if e.from_id != node_id and e.to_id != node_id]

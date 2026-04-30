@@ -77,6 +77,30 @@ def test_add_edge_appends_edge():
     assert edge in graph.edges
 
 
+def test_add_edge_ignores_duplicate_same_direction():
+    graph = CampusGraph(edges=[Edge(from_id=0, to_id=1)])
+    graph.add_edge(Edge(from_id=0, to_id=1))
+    assert len(graph.edges) == 1
+    assert graph.edges[0].from_id == 0
+    assert graph.edges[0].to_id == 1
+
+
+def test_add_edge_ignores_duplicate_reverse_direction():
+    graph = CampusGraph(edges=[Edge(from_id=1, to_id=0)])
+    graph.add_edge(Edge(from_id=0, to_id=1))
+    assert len(graph.edges) == 1
+    assert graph.edges[0].from_id == 1
+    assert graph.edges[0].to_id == 0
+
+
+def test_add_edge_allows_distinct_node_pair():
+    graph = CampusGraph(edges=[Edge(from_id=0, to_id=1)])
+    graph.add_edge(Edge(from_id=1, to_id=2))
+    assert len(graph.edges) == 2
+    assert (0, 1) in {(e.from_id, e.to_id) for e in graph.edges}
+    assert (1, 2) in {(e.from_id, e.to_id) for e in graph.edges}
+
+
 def test_move_node_updates_position_in_index_and_list():
     node = Node(id=0, y=0.0, x=0.0)
     graph = CampusGraph(nodes=[node])
@@ -156,3 +180,30 @@ def test_next_node_id_reflects_added_nodes():
     graph = CampusGraph()
     graph.add_node(Node(id=5, y=0.0, x=0.0))
     assert graph.next_node_id() == 6
+
+
+def test_remove_node_removes_node_from_list_and_index():
+    graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0)])
+    graph.remove_node(0)
+    assert graph.get_node(0) is None
+    assert len(graph.nodes) == 1
+    assert graph.nodes[0].id == 1
+
+
+def test_remove_node_drops_all_incident_edges():
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0), Node(id=2, y=2.0, x=2.0)],
+        edges=[Edge(from_id=0, to_id=1), Edge(from_id=2, to_id=0), Edge(from_id=1, to_id=2)],
+    )
+    graph.remove_node(0)
+    assert len(graph.edges) == 1
+    assert graph.edges[0].from_id == 1
+    assert graph.edges[0].to_id == 2
+
+
+def test_remove_node_raises_key_error_for_unknown_id():
+    graph = CampusGraph()
+    with pytest.raises(KeyError):
+        graph.remove_node(99)
+
+

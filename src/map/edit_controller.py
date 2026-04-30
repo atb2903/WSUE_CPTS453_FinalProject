@@ -20,7 +20,10 @@ class EditState:
     @property
     def caption(self) -> str:
         if self.state == State.NODE_SELECTED:
-            return f"Node {self.active_node_id} selected — click the map to move it."
+            return (
+                f"Node {self.active_node_id} selected — click the map to move it, "
+                "or click another node to connect them."
+            )
         if self.state == State.PENDING_NODE:
             return (
                 "Node placed — click an existing node to connect it, "
@@ -56,19 +59,6 @@ class EditController:
         if new_node_click and tooltip:
             node = self._node_from_tooltip(tooltip)
             if node is not None:
-                # Only leaf nodes (degree ≤ 1) may be selected for moving.
-                # When connecting a pending node, any target is valid regardless of degree.
-                non_selectable = (
-                    self._edit_state.state != State.PENDING_NODE
-                    and self._graph.degree(node.id) > 1
-                )
-                if non_selectable:
-                    return EditState(
-                        state=self._edit_state.state,
-                        active_node_id=self._edit_state.active_node_id,
-                        last_object_clicked=obj_clicked,
-                        last_map_click=map_click,
-                    )
                 return self._handle_node_click(node, obj_clicked, map_click)
             # Unknown tooltip: consume both clicks to prevent a ghost map-click on the next rerun
             return EditState(
@@ -97,11 +87,31 @@ class EditController:
         consumed_map_click = map_click
         if self._edit_state.state == State.PENDING_NODE:
             return self._connect_pending_to(node, obj_clicked, consumed_map_click)
+        if self._edit_state.state == State.NODE_SELECTED:
+            return self._connect_selected_to(node, obj_clicked, consumed_map_click)
         return EditState(
             state=State.NODE_SELECTED,
             active_node_id=node.id,
             last_object_clicked=obj_clicked,
             last_map_click=consumed_map_click,
+        )
+
+    def _connect_selected_to(
+        self, target: Node, obj_clicked: dict, map_click: dict | None
+    ) -> EditState:
+        if target.id == self._edit_state.active_node_id:
+            # Clicking the selected node itself: stay selected, consume clicks
+            return EditState(
+                state=State.NODE_SELECTED,
+                active_node_id=self._edit_state.active_node_id,
+                last_object_clicked=obj_clicked,
+                last_map_click=map_click,
+            )
+        self._graph.add_edge(Edge(from_id=self._edit_state.active_node_id, to_id=target.id))
+        return EditState(
+            state=State.IDLE,
+            last_object_clicked=obj_clicked,
+            last_map_click=map_click,
         )
 
     def _connect_pending_to(

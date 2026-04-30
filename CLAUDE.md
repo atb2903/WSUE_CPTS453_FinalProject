@@ -44,6 +44,7 @@ pytest
 - **Gitignore check**: After creating any file or directory, decide whether it should be tracked in git. If it is runtime, temporary, generated, or local-only, add it to `.gitignore` immediately.
 - **Maintain README**: Keep `README.md` at the project root up to date with current setup, run, and test instructions.
 - **File organisation**: Group source code into subfolders and files that mirror the behavior of the source code. Each file covers one coherent concern in alignment with the Single-Responsibility Principle. Files should be well organised, named sensibly, and be grouped together based on their purpose.
+- **User driven git usage**: Do not touch the git repository unless explicitly asked to by the user. Only read-only commands are permitted unless otherwise told. 
 
 ## Architecture
 

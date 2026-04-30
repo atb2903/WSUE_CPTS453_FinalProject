@@ -26,7 +26,10 @@ def test_caption_idle():
 
 def test_caption_node_selected():
     state = EditState(state=State.NODE_SELECTED, active_node_id=3)
-    assert state.caption == "Node 3 selected — click the map to move it."
+    assert state.caption == (
+        "Node 3 selected — click the map to move it, "
+        "or click another node to connect them."
+    )
 
 
 def test_caption_pending_node():

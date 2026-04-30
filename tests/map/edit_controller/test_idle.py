@@ -43,8 +43,8 @@ def test_map_click_assigns_next_available_id():
     assert new_state.active_node_id == 2
 
 
-def test_click_on_non_leaf_node_is_consumed_without_selecting(non_leaf_graph):
-    """Clicking a node with degree > 1 in IDLE must not select it."""
+def test_click_on_non_leaf_node_transitions_to_node_selected(non_leaf_graph):
+    """Clicking a node with degree > 1 in IDLE should select it."""
     state = EditState()
     map_data = {
         "last_object_clicked": {"lat": 1.0, "lng": 1.0},
@@ -52,7 +52,7 @@ def test_click_on_non_leaf_node_is_consumed_without_selecting(non_leaf_graph):
         "last_clicked": {"lat": 1.0, "lng": 1.0},
     }
     new_state = EditController(non_leaf_graph, state).handle_click(map_data)
-    assert new_state.state == State.IDLE
-    assert new_state.active_node_id is None
+    assert new_state.state == State.NODE_SELECTED
+    assert new_state.active_node_id == 1
     assert new_state.last_object_clicked == {"lat": 1.0, "lng": 1.0}
     assert new_state.last_map_click == {"lat": 1.0, "lng": 1.0}

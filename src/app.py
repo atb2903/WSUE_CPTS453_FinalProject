@@ -4,6 +4,7 @@ import folium
 import streamlit as st
 from PIL import Image
 from streamlit_folium import st_folium
+from streamlit_keypress import key_press_events
 
 from map.edit_controller import EditController, EditState
 from map.graph import CampusGraph
@@ -41,6 +42,10 @@ if "graph" not in st.session_state:
     st.session_state.graph = _load_graph_or_fallback(_GRAPH_PATH)
 if "edit_state" not in st.session_state:
     st.session_state.edit_state = EditState()
+if "delete_event_counter" not in st.session_state:
+    st.session_state.delete_event_counter = 0
+if "last_pressed_key" not in st.session_state:
+    st.session_state.last_pressed_key = None
 
 mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation")
 
@@ -77,6 +82,16 @@ else:  # Edit
     )
 
     new_edit_state = EditController(graph, edit_state).handle_click(map_data)
+
+    pressed_key = key_press_events()
+    delete_event = None
+    if pressed_key == "Delete" and st.session_state.last_pressed_key != "Delete":
+        st.session_state.delete_event_counter += 1
+        delete_event = st.session_state.delete_event_counter
+    st.session_state.last_pressed_key = pressed_key
+
+    new_edit_state = EditController(graph, new_edit_state).handle_delete_key(delete_event)
+
     if new_edit_state != edit_state:
         st.session_state.edit_state = new_edit_state
         st.rerun()

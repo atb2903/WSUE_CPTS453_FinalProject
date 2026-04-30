@@ -35,10 +35,13 @@ class GraphOverlayRenderer:
             to_node = self._graph.get_node(edge.to_id)
             if from_node is None or to_node is None:
                 continue
+            first = min(edge.from_id, edge.to_id)
+            second = max(edge.from_id, edge.to_id)
             folium.PolyLine(
                 locations=[[from_node.y, from_node.x], [to_node.y, to_node.x]],
                 color=_WSU_GRAY,
                 weight=_EDGE_WEIGHT,
+                tooltip=f"edge:{first}-{second}",
             ).add_to(parent)
 
     def _draw_nodes(

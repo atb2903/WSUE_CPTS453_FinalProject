@@ -74,6 +74,16 @@ class CampusGraph:
         self.nodes.remove(node)
         self.edges[:] = [e for e in self.edges if e.from_id != node_id and e.to_id != node_id]
 
+    def remove_edge(self, from_id: int, to_id: int) -> bool:
+        """Remove one edge for the undirected pair; return True if removed, else False."""
+        for index, edge in enumerate(self.edges):
+            same_direction = edge.from_id == from_id and edge.to_id == to_id
+            reverse_direction = edge.from_id == to_id and edge.to_id == from_id
+            if same_direction or reverse_direction:
+                del self.edges[index]
+                return True
+        return False
+
     def to_dict(self) -> dict:
         return {
             "nodes": [{"id": n.id, "y": n.y, "x": n.x} for n in self.nodes],

@@ -39,19 +39,32 @@ def test_unknown_tooltip_is_consumed_without_selecting():
     assert new_state.state == State.IDLE
 
 
-def test_non_integer_tooltip_is_consumed():
-    """Non-integer tooltips (e.g. edge labels) must not fall through to a map-click handler."""
+def test_non_parseable_edge_tooltip_is_consumed():
+    """Invalid edge tooltip values must not fall through to a map-click handler."""
     graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0)])
     state = EditState()
     map_data = {
         "last_object_clicked": {"lat": 0.0, "lng": 0.0},
-        "last_object_clicked_tooltip": "not-an-int",
+        "last_object_clicked_tooltip": "edge:not-an-int",
         "last_clicked": None,
     }
     new_state = EditController(graph, state).handle_click(map_data)
     assert new_state.state == State.IDLE
     assert new_state.last_object_clicked == {"lat": 0.0, "lng": 0.0}
     assert len(graph.nodes) == 1
+
+
+def test_missing_edge_delimiter_tooltip_is_consumed():
+    graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0)])
+    state = EditState()
+    map_data = {
+        "last_object_clicked": {"lat": 0.0, "lng": 0.0},
+        "last_object_clicked_tooltip": "edge:12",
+        "last_clicked": None,
+    }
+    new_state = EditController(graph, state).handle_click(map_data)
+    assert new_state.state == State.IDLE
+    assert new_state.last_object_clicked == {"lat": 0.0, "lng": 0.0}
 
 
 def test_node_click_consumes_concurrent_map_click():

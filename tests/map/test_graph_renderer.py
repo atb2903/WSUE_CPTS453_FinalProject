@@ -119,3 +119,17 @@ def test_node_tooltip_is_string_id():
     tooltips = [c for c in markers[0]._children.values() if isinstance(c, folium.Tooltip)]
     assert len(tooltips) == 1
     assert tooltips[0].text == "7"
+
+
+def test_edge_tooltip_uses_canonical_edge_identifier():
+    fg = folium.FeatureGroup()
+    graph = CampusGraph(
+        nodes=[Node(id=2, y=0.0, x=0.0), Node(id=1, y=10.0, x=20.0)],
+        edges=[Edge(from_id=2, to_id=1)],
+    )
+    GraphOverlayRenderer(graph).render_onto(fg)
+    lines = _children_of_type(fg, PolyLine)
+    assert len(lines) == 1
+    tooltips = [c for c in lines[0]._children.values() if isinstance(c, folium.Tooltip)]
+    assert len(tooltips) == 1
+    assert tooltips[0].text == "edge:1-2"

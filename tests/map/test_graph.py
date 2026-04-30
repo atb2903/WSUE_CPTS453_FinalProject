@@ -207,6 +207,29 @@ def test_remove_node_raises_key_error_for_unknown_id():
         graph.remove_node(99)
 
 
+def test_remove_edge_removes_exact_direction_match():
+    graph = CampusGraph(edges=[Edge(from_id=0, to_id=1), Edge(from_id=1, to_id=2)])
+    removed = graph.remove_edge(0, 1)
+    assert removed is True
+    assert len(graph.edges) == 1
+    assert graph.edges[0].from_id == 1
+    assert graph.edges[0].to_id == 2
+
+
+def test_remove_edge_removes_reverse_direction_match():
+    graph = CampusGraph(edges=[Edge(from_id=1, to_id=0)])
+    removed = graph.remove_edge(0, 1)
+    assert removed is True
+    assert graph.edges == []
+
+
+def test_remove_edge_returns_false_when_pair_missing():
+    graph = CampusGraph(edges=[Edge(from_id=0, to_id=1)])
+    removed = graph.remove_edge(0, 2)
+    assert removed is False
+    assert len(graph.edges) == 1
+
+
 def test_to_dict_round_trip_preserves_graph_contents():
     original = CampusGraph(
         nodes=[Node(id=0, y=12.5, x=7.25), Node(id=1, y=1.0, x=2.0)],

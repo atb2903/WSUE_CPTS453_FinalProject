@@ -4,7 +4,6 @@ import folium
 import streamlit as st
 from PIL import Image
 from streamlit_folium import st_folium
-from streamlit_keypress import key_press_events
 
 from map.edit_controller import EditController, EditState
 from map.graph import CampusGraph
@@ -14,6 +13,11 @@ from map.renderer import CampusMapRenderer
 _IMAGE_PATH = Path("assets/map.png")
 _GRAPH_PATH = Path("assets/graph.json")
 Image.MAX_IMAGE_PIXELS = 200_000_000
+
+try:
+    from streamlit_keypress import key_press_events
+except ModuleNotFoundError:
+    key_press_events = None
 
 st.set_page_config(page_title="WSU Map Viewer", layout="wide")
 st.title("WSU Map Viewer")
@@ -63,6 +67,11 @@ if mode == "Navigation":
 else:  # Edit
     edit_state: EditState = st.session_state.edit_state
     st.caption(edit_state.caption)
+    if key_press_events is None:
+        st.warning(
+            "Keyboard Delete requires streamlit-keypress. "
+            "Install it with: pipx inject streamlit streamlit-keypress"
+        )
     if st.button("Save Graph"):
         try:
             graph.save_to_file(_GRAPH_PATH)
@@ -83,7 +92,7 @@ else:  # Edit
 
     new_edit_state = EditController(graph, edit_state).handle_click(map_data)
 
-    pressed_key = key_press_events()
+    pressed_key = key_press_events() if key_press_events is not None else None
     delete_event = None
     if pressed_key == "Delete" and st.session_state.last_pressed_key != "Delete":
         st.session_state.delete_event_counter += 1

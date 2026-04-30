@@ -133,3 +133,19 @@ def test_edge_tooltip_uses_canonical_edge_identifier():
     tooltips = [c for c in lines[0]._children.values() if isinstance(c, folium.Tooltip)]
     assert len(tooltips) == 1
     assert tooltips[0].text == "edge:1-2"
+
+
+def test_highlighted_edge_renders_in_wsu_crimson():
+    campus_map = _make_base_map()
+    GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, highlighted_edge=(0, 1))
+    lines = _children_of_type(campus_map, PolyLine)
+    assert len(lines) == 1
+    assert lines[0].options["color"] == "#981e32"
+
+
+def test_unhighlighted_edge_renders_in_wsu_gray():
+    campus_map = _make_base_map()
+    GraphOverlayRenderer(_make_two_node_graph()).render_onto(campus_map, highlighted_edge=(1, 2))
+    lines = _children_of_type(campus_map, PolyLine)
+    assert len(lines) == 1
+    assert lines[0].options["color"] == "#717c7d"

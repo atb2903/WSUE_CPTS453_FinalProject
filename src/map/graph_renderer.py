@@ -24,12 +24,17 @@ class GraphOverlayRenderer:
         self,
         parent: folium.Map | folium.FeatureGroup,
         highlighted_node_id: int | None = None,
+        highlighted_edge: tuple[int, int] | None = None,
     ) -> None:
         """Draw the graph overlay onto parent in-place."""
-        self._draw_edges(parent)
+        self._draw_edges(parent, highlighted_edge)
         self._draw_nodes(parent, highlighted_node_id)
 
-    def _draw_edges(self, parent: folium.Map | folium.FeatureGroup) -> None:
+    def _draw_edges(
+        self,
+        parent: folium.Map | folium.FeatureGroup,
+        highlighted_edge: tuple[int, int] | None,
+    ) -> None:
         for edge in self._graph.edges:
             from_node = self._graph.get_node(edge.from_id)
             to_node = self._graph.get_node(edge.to_id)
@@ -37,9 +42,10 @@ class GraphOverlayRenderer:
                 continue
             first = min(edge.from_id, edge.to_id)
             second = max(edge.from_id, edge.to_id)
+            color = _WSU_CRIMSON if highlighted_edge == (first, second) else _WSU_GRAY
             folium.PolyLine(
                 locations=[[from_node.y, from_node.x], [to_node.y, to_node.x]],
-                color=_WSU_GRAY,
+                color=color,
                 weight=_EDGE_WEIGHT,
                 tooltip=f"edge:{first}-{second}",
             ).add_to(parent)

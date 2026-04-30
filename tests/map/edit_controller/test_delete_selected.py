@@ -18,43 +18,43 @@ def test_edge_tooltip_click_transitions_to_edge_selected():
     assert new_state.selected_edge == (0, 1)
 
 
-def test_delete_event_removes_selected_edge_and_returns_idle():
+def test_delete_selected_removes_selected_edge_and_returns_idle():
     graph = CampusGraph(
         nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0)],
         edges=[Edge(from_id=0, to_id=1)],
     )
     state = EditState(state=State.EDGE_SELECTED, selected_edge=(0, 1))
-    new_state = EditController(graph, state).handle_delete_key(delete_event=1)
+    new_state = EditController(graph, state).handle_delete_selected()
     assert new_state.state == State.IDLE
     assert new_state.selected_edge is None
     assert len(graph.edges) == 0
 
 
-def test_delete_event_removes_selected_node_and_incident_edges():
+def test_delete_selected_removes_selected_node_and_incident_edges():
     graph = CampusGraph(
         nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0), Node(id=2, y=2.0, x=2.0)],
         edges=[Edge(from_id=0, to_id=1), Edge(from_id=2, to_id=1)],
     )
     state = EditState(state=State.NODE_SELECTED, active_node_id=1)
-    new_state = EditController(graph, state).handle_delete_key(delete_event=2)
+    new_state = EditController(graph, state).handle_delete_selected()
     assert new_state.state == State.IDLE
     assert new_state.active_node_id is None
     assert graph.get_node(1) is None
     assert len(graph.edges) == 0
 
 
-def test_delete_event_with_no_selection_is_noop():
+def test_delete_selected_with_no_selection_is_noop():
     graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0)])
     state = EditState()
-    new_state = EditController(graph, state).handle_delete_key(delete_event=3)
+    new_state = EditController(graph, state).handle_delete_selected()
     assert new_state.state == State.IDLE
     assert len(graph.nodes) == 1
 
 
-def test_repeated_delete_event_id_is_idempotent():
+def test_repeated_delete_selected_call_is_idempotent():
     graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0)])
     state = EditState(state=State.NODE_SELECTED, active_node_id=0)
-    after_first = EditController(graph, state).handle_delete_key(delete_event=4)
+    after_first = EditController(graph, state).handle_delete_selected()
     assert graph.get_node(0) is None
-    after_second = EditController(graph, after_first).handle_delete_key(delete_event=4)
+    after_second = EditController(graph, after_first).handle_delete_selected()
     assert after_second is after_first

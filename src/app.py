@@ -5,7 +5,7 @@ import streamlit as st
 from PIL import Image
 from streamlit_folium import st_folium
 
-from map.edit_controller import EditController, EditState
+from map.edit_controller import EditController, EditState, State
 from map.graph import CampusGraph
 from map.graph_renderer import GraphOverlayRenderer
 from map.renderer import CampusMapRenderer
@@ -13,11 +13,6 @@ from map.renderer import CampusMapRenderer
 _IMAGE_PATH = Path("assets/map.png")
 _GRAPH_PATH = Path("assets/graph.json")
 Image.MAX_IMAGE_PIXELS = 200_000_000
-
-try:
-    from streamlit_keypress import key_press_events
-except ModuleNotFoundError:
-    key_press_events = None
 
 st.set_page_config(page_title="WSU Map Viewer", layout="wide")
 st.title("WSU Map Viewer")
@@ -46,10 +41,6 @@ if "graph" not in st.session_state:
     st.session_state.graph = _load_graph_or_fallback(_GRAPH_PATH)
 if "edit_state" not in st.session_state:
     st.session_state.edit_state = EditState()
-if "delete_event_counter" not in st.session_state:
-    st.session_state.delete_event_counter = 0
-if "last_pressed_key" not in st.session_state:
-    st.session_state.last_pressed_key = None
 
 mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation")
 
@@ -67,11 +58,8 @@ if mode == "Navigation":
 else:  # Edit
     edit_state: EditState = st.session_state.edit_state
     st.caption(edit_state.caption)
-    if key_press_events is None:
-        st.warning(
-            "Keyboard Delete requires streamlit-keypress. "
-            "Install it with: pipx inject streamlit streamlit-keypress"
-        )
+    has_selection = edit_state.state in {State.NODE_SELECTED, State.EDGE_SELECTED}
+    delete_clicked = st.button("Delete Selected", disabled=not has_selection)
     if st.button("Save Graph"):
         try:
             graph.save_to_file(_GRAPH_PATH)
@@ -80,7 +68,11 @@ else:  # Edit
             st.error(f"Failed to save graph to {_GRAPH_PATH}: {error}")
 
     fg = folium.FeatureGroup()
-    GraphOverlayRenderer(graph).render_onto(fg, highlighted_node_id=edit_state.active_node_id)
+    GraphOverlayRenderer(graph).render_onto(
+        fg,
+        highlighted_node_id=edit_state.active_node_id,
+        highlighted_edge=edit_state.selected_edge,
+    )
     map_data = st_folium(
         campus_map,
         width=None,
@@ -92,14 +84,8 @@ else:  # Edit
 
     new_edit_state = EditController(graph, edit_state).handle_click(map_data)
 
-    pressed_key = key_press_events() if key_press_events is not None else None
-    delete_event = None
-    if pressed_key == "Delete" and st.session_state.last_pressed_key != "Delete":
-        st.session_state.delete_event_counter += 1
-        delete_event = st.session_state.delete_event_counter
-    st.session_state.last_pressed_key = pressed_key
-
-    new_edit_state = EditController(graph, new_edit_state).handle_delete_key(delete_event)
+    if delete_clicked:
+        new_edit_state = EditController(graph, new_edit_state).handle_delete_selected()
 
     if new_edit_state != edit_state:
         st.session_state.edit_state = new_edit_state

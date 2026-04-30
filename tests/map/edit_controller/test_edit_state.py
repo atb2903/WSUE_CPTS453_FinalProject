@@ -11,7 +11,6 @@ def test_defaults_to_idle():
     assert state.selected_edge is None
     assert state.last_object_clicked is None
     assert state.last_map_click is None
-    assert state.last_delete_event is None
 
 
 def test_is_immutable():
@@ -30,18 +29,18 @@ def test_caption_node_selected():
     state = EditState(state=State.NODE_SELECTED, active_node_id=3)
     assert state.caption == (
         "Node 3 selected — click the map to move it, "
-        "click another node to connect them, or press Delete to remove it."
+        "click another node to connect them, or click Delete Selected."
     )
 
 
 def test_caption_edge_selected():
     state = EditState(state=State.EDGE_SELECTED, selected_edge=(2, 5))
-    assert state.caption == "Edge 2-5 selected — press Delete to remove it."
+    assert state.caption == "Edge 2-5 selected — click Delete Selected."
 
 
 def test_caption_edge_selected_without_explicit_pair():
     state = EditState(state=State.EDGE_SELECTED)
-    assert state.caption == "Edge selected — press Delete to remove it."
+    assert state.caption == "Edge selected — click Delete Selected."
 
 
 def test_caption_pending_node():

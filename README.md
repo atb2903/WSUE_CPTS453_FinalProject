@@ -16,7 +16,7 @@ Restart your shell (or run `source ~/.bashrc`), then install and inject app depe
 
 ```bash
 pipx install streamlit
-pipx inject streamlit folium streamlit-folium Pillow pytest pytest-cov streamlit-keypress --include-apps
+pipx inject streamlit folium streamlit-folium Pillow pytest pytest-cov --include-apps
 ```
 
 ## Run

@@ -18,21 +18,20 @@ class EditState:
     selected_edge: tuple[int, int] | None = None
     last_object_clicked: dict | None = None
     last_map_click: dict | None = None
-    last_delete_event: int | None = None
 
     @property
     def caption(self) -> str:
         if self.state == State.NODE_SELECTED:
             return (
                 f"Node {self.active_node_id} selected — click the map to move it, "
-                "click another node to connect them, or press Delete to remove it."
+                "click another node to connect them, or click Delete Selected."
             )
         if self.state == State.EDGE_SELECTED:
             if self.selected_edge is None:
-                return "Edge selected — press Delete to remove it."
+                return "Edge selected — click Delete Selected."
             return (
                 f"Edge {self.selected_edge[0]}-{self.selected_edge[1]} selected — "
-                "press Delete to remove it."
+                "click Delete Selected."
             )
         if self.state == State.PENDING_NODE:
             return (
@@ -80,7 +79,6 @@ class EditController:
                 selected_edge=self._edit_state.selected_edge,
                 last_object_clicked=obj_clicked,
                 last_map_click=map_click,
-                last_delete_event=self._edit_state.last_delete_event,
             )
 
         if new_map_click and map_click:
@@ -88,18 +86,14 @@ class EditController:
 
         return self._edit_state
 
-    def handle_delete_key(self, delete_event: int | None) -> EditState:
-        """Delete selected object on a new delete key event."""
-        if delete_event is None or delete_event == self._edit_state.last_delete_event:
-            return self._edit_state
-
+    def handle_delete_selected(self) -> EditState:
+        """Delete currently selected node or edge."""
         if self._edit_state.state == State.NODE_SELECTED and self._edit_state.active_node_id is not None:
             self._graph.remove_node(self._edit_state.active_node_id)
             return EditState(
                 state=State.IDLE,
                 last_object_clicked=self._edit_state.last_object_clicked,
                 last_map_click=self._edit_state.last_map_click,
-                last_delete_event=delete_event,
             )
 
         if self._edit_state.state == State.EDGE_SELECTED and self._edit_state.selected_edge is not None:
@@ -108,17 +102,8 @@ class EditController:
                 state=State.IDLE,
                 last_object_clicked=self._edit_state.last_object_clicked,
                 last_map_click=self._edit_state.last_map_click,
-                last_delete_event=delete_event,
             )
-
-        return EditState(
-            state=self._edit_state.state,
-            active_node_id=self._edit_state.active_node_id,
-            selected_edge=self._edit_state.selected_edge,
-            last_object_clicked=self._edit_state.last_object_clicked,
-            last_map_click=self._edit_state.last_map_click,
-            last_delete_event=delete_event,
-        )
+        return self._edit_state
 
     def _node_from_tooltip(self, tooltip: str) -> Node | None:
         try:
@@ -155,7 +140,6 @@ class EditController:
             selected_edge=None,
             last_object_clicked=obj_clicked,
             last_map_click=consumed_map_click,
-            last_delete_event=self._edit_state.last_delete_event,
         )
 
     def _handle_edge_click(
@@ -166,7 +150,6 @@ class EditController:
             selected_edge=edge,
             last_object_clicked=obj_clicked,
             last_map_click=map_click,
-            last_delete_event=self._edit_state.last_delete_event,
         )
 
     def _connect_selected_to(
@@ -180,14 +163,12 @@ class EditController:
                 selected_edge=None,
                 last_object_clicked=obj_clicked,
                 last_map_click=map_click,
-                last_delete_event=self._edit_state.last_delete_event,
             )
         self._graph.add_edge(Edge(from_id=self._edit_state.active_node_id, to_id=target.id))
         return EditState(
             state=State.IDLE,
             last_object_clicked=obj_clicked,
             last_map_click=map_click,
-            last_delete_event=self._edit_state.last_delete_event,
         )
 
     def _connect_pending_to(
@@ -201,14 +182,12 @@ class EditController:
                 selected_edge=None,
                 last_object_clicked=obj_clicked,
                 last_map_click=map_click,
-                last_delete_event=self._edit_state.last_delete_event,
             )
         self._graph.add_edge(Edge(from_id=self._edit_state.active_node_id, to_id=node.id))
         return EditState(
             state=State.IDLE,
             last_object_clicked=obj_clicked,
             last_map_click=map_click,
-            last_delete_event=self._edit_state.last_delete_event,
         )
 
     def _from_map_click(self, **fields) -> EditState:
@@ -218,7 +197,6 @@ class EditController:
         # node-click events on the next Streamlit rerun.
         return EditState(
             last_object_clicked=self._edit_state.last_object_clicked,
-            last_delete_event=self._edit_state.last_delete_event,
             **fields,
         )
 

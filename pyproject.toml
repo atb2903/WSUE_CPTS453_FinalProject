@@ -1,7 +1,7 @@
 [project]
 name = "wsu-gps"
 version = "0.1.0"
-dependencies = ["streamlit-keypress"]
+dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

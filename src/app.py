@@ -6,11 +6,12 @@ from PIL import Image
 from streamlit_folium import st_folium
 
 from map.edit_controller import EditController, EditState
-from map.graph import CampusGraph, Edge, Node
+from map.graph import CampusGraph
 from map.graph_renderer import GraphOverlayRenderer
 from map.renderer import CampusMapRenderer
 
 _IMAGE_PATH = Path("assets/map.png")
+_GRAPH_PATH = Path("assets/graph.json")
 Image.MAX_IMAGE_PIXELS = 200_000_000
 
 st.set_page_config(page_title="WSU Map Viewer", layout="wide")
@@ -27,17 +28,17 @@ def _image_size(path: Path) -> tuple[int, int]:
         return img.size
 
 
-image_width, image_height = _image_size(_IMAGE_PATH)
+def _load_graph_or_fallback(path: Path) -> CampusGraph:
+    try:
+        return CampusGraph.load_from_file(path)
+    except Exception as error:
+        st.error(f"Failed to load graph from {path}: {error}. Starting with an empty graph.")
+        return CampusGraph()
+
 
 # --- Session state ---
 if "graph" not in st.session_state:
-    st.session_state.graph = CampusGraph(
-        nodes=[
-            Node(id=0, y=image_height * 0.9, x=image_width * 0.1),
-            Node(id=1, y=image_height * 0.1, x=image_width * 0.9),
-        ],
-        edges=[Edge(from_id=0, to_id=1)],
-    )
+    st.session_state.graph = _load_graph_or_fallback(_GRAPH_PATH)
 if "edit_state" not in st.session_state:
     st.session_state.edit_state = EditState()
 
@@ -57,6 +58,12 @@ if mode == "Navigation":
 else:  # Edit
     edit_state: EditState = st.session_state.edit_state
     st.caption(edit_state.caption)
+    if st.button("Save Graph"):
+        try:
+            graph.save_to_file(_GRAPH_PATH)
+            st.success(f"Saved graph to {_GRAPH_PATH}.")
+        except Exception as error:
+            st.error(f"Failed to save graph to {_GRAPH_PATH}: {error}")
 
     fg = folium.FeatureGroup()
     GraphOverlayRenderer(graph).render_onto(fg, highlighted_node_id=edit_state.active_node_id)

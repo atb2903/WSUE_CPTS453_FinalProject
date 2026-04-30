@@ -1,4 +1,6 @@
+import json
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -71,3 +73,57 @@ class CampusGraph:
         node = self._node_index.pop(node_id)
         self.nodes.remove(node)
         self.edges[:] = [e for e in self.edges if e.from_id != node_id and e.to_id != node_id]
+
+    def to_dict(self) -> dict:
+        return {
+            "nodes": [{"id": n.id, "y": n.y, "x": n.x} for n in self.nodes],
+            "edges": [{"from_id": e.from_id, "to_id": e.to_id} for e in self.edges],
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict) -> "CampusGraph":
+        if not isinstance(payload, dict):
+            raise ValueError("Graph payload must be a dictionary")
+
+        nodes_payload = payload.get("nodes")
+        edges_payload = payload.get("edges")
+        if not isinstance(nodes_payload, list) or not isinstance(edges_payload, list):
+            raise ValueError("Graph payload must include list fields 'nodes' and 'edges'")
+
+        graph = cls()
+
+        for node_payload in nodes_payload:
+            if not isinstance(node_payload, dict):
+                raise ValueError("Each node must be a dictionary")
+            if not all(key in node_payload for key in ("id", "y", "x")):
+                raise ValueError("Each node must include 'id', 'y', and 'x'")
+            graph.add_node(
+                Node(
+                    id=int(node_payload["id"]),
+                    y=float(node_payload["y"]),
+                    x=float(node_payload["x"]),
+                )
+            )
+
+        for edge_payload in edges_payload:
+            if not isinstance(edge_payload, dict):
+                raise ValueError("Each edge must be a dictionary")
+            if not all(key in edge_payload for key in ("from_id", "to_id")):
+                raise ValueError("Each edge must include 'from_id' and 'to_id'")
+            graph.add_edge(
+                Edge(
+                    from_id=int(edge_payload["from_id"]),
+                    to_id=int(edge_payload["to_id"]),
+                )
+            )
+
+        return graph
+
+    def save_to_file(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+
+    @classmethod
+    def load_from_file(cls, path: Path) -> "CampusGraph":
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return cls.from_dict(payload)

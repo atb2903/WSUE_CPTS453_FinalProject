@@ -50,6 +50,26 @@ def test_node_click_on_self_stays_pending():
     assert len(graph.edges) == 0
 
 
+def test_map_click_on_existing_node_coords_is_no_op_in_pending_node():
+    """A bare map-click whose pixel coincides with an existing (non-active) node
+    must not add a duplicate-coordinate node nor connect via the empty-space path.
+    """
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=5.0, x=5.0)]
+    )
+    state = EditState(state=State.PENDING_NODE, active_node_id=0)
+    map_data = {
+        "last_object_clicked": None,
+        "last_object_clicked_tooltip": None,
+        "last_clicked": {"lat": 5.0, "lng": 5.0},
+    }
+    new_state = EditController(graph, state).handle_click(map_data)
+    assert new_state.state == State.PENDING_NODE
+    assert new_state.active_node_id == 0
+    assert len(graph.nodes) == 2
+    assert len(graph.edges) == 0
+
+
 def test_node_click_on_non_leaf_node_connects_and_goes_idle(non_leaf_graph):
     """In PENDING_NODE, non-leaf nodes are valid connection targets."""
     non_leaf_graph.add_node(Node(id=3, y=3.0, x=3.0))

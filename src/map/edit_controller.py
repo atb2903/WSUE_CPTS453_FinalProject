@@ -212,17 +212,28 @@ class EditController:
 
     def _handle_map_click(self, map_click: dict) -> EditState:
         state = self._edit_state.state
-        if state == State.NODE_SELECTED:
-            self._graph.move_node(
-                self._edit_state.active_node_id,
-                y=map_click["lat"],
-                x=map_click["lng"],
+        # The graph rejects duplicate-coordinate moves/adds; if the click
+        # lands on the exact pixel of an existing node, treat it as a no-op
+        # and consume the click so it isn't re-processed on the next rerun.
+        try:
+            if state == State.NODE_SELECTED:
+                self._graph.move_node(
+                    self._edit_state.active_node_id,
+                    y=map_click["lat"],
+                    x=map_click["lng"],
+                )
+                return self._from_map_click(state=State.IDLE, last_map_click=map_click)
+            if state == State.PENDING_NODE:
+                return self._create_connected_node(map_click)
+            # IDLE: create new node, enter pending
+            return self._create_pending_node(map_click)
+        except ValueError:
+            return self._from_map_click(
+                state=state,
+                active_node_id=self._edit_state.active_node_id,
+                selected_edge=self._edit_state.selected_edge,
+                last_map_click=map_click,
             )
-            return self._from_map_click(state=State.IDLE, last_map_click=map_click)
-        if state == State.PENDING_NODE:
-            return self._create_connected_node(map_click)
-        # IDLE: create new node, enter pending
-        return self._create_pending_node(map_click)
 
     def _create_pending_node(self, map_click: dict) -> EditState:
         new_id = self._graph.next_node_id()

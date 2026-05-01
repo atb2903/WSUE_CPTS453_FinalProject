@@ -169,6 +169,26 @@ def test_connect_is_idempotent_on_second_rerun():
     assert len(graph.edges) == 1
 
 
+def test_map_click_on_other_node_coords_is_no_op_in_node_selected():
+    """Moving the active node onto another node's exact coordinates is rejected
+    by the graph; the edit-controller must keep the selection intact."""
+    graph = CampusGraph(
+        nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=5.0, x=5.0)]
+    )
+    state = EditState(state=State.NODE_SELECTED, active_node_id=0)
+    map_data = {
+        "last_object_clicked": None,
+        "last_object_clicked_tooltip": None,
+        "last_clicked": {"lat": 5.0, "lng": 5.0},
+    }
+    new_state = EditController(graph, state).handle_click(map_data)
+    assert new_state.state == State.NODE_SELECTED
+    assert new_state.active_node_id == 0
+    assert graph.get_node(0).y == 0.0
+    assert graph.get_node(0).x == 0.0
+    assert new_state.last_map_click == {"lat": 5.0, "lng": 5.0}
+
+
 def test_map_click_preserves_last_object_clicked_to_prevent_reselection():
     """After moving a node, last_object_clicked must be preserved so the next
     rerun does not see a new object-click event and immediately re-select."""

@@ -73,6 +73,57 @@ def test_from_dict_raises_for_duplicate_node_ids():
         CampusGraph.from_dict(payload)
 
 
+def test_from_dict_merges_duplicate_node_locations_using_first_id():
+    payload = {
+        "nodes": [
+            {"id": 10, "y": 100.0, "x": 200.0},
+            {"id": 11, "y": 100.0, "x": 200.0},
+            {"id": 12, "y": 150.0, "x": 250.0},
+        ],
+        "edges": [],
+    }
+
+    graph = CampusGraph.from_dict(payload)
+
+    assert graph.to_dict()["nodes"] == [
+        {"id": 10, "y": 100.0, "x": 200.0},
+        {"id": 12, "y": 150.0, "x": 250.0},
+    ]
+
+
+def test_from_dict_remaps_edges_after_duplicate_location_merge():
+    payload = {
+        "nodes": [
+            {"id": 10, "y": 100.0, "x": 200.0},
+            {"id": 11, "y": 100.0, "x": 200.0},
+            {"id": 12, "y": 150.0, "x": 250.0},
+        ],
+        "edges": [
+            {"from_id": 11, "to_id": 12},
+        ],
+    }
+
+    graph = CampusGraph.from_dict(payload)
+
+    assert graph.to_dict()["edges"] == [{"from_id": 10, "to_id": 12}]
+
+
+def test_from_dict_drops_self_loop_created_by_duplicate_location_merge():
+    payload = {
+        "nodes": [
+            {"id": 10, "y": 100.0, "x": 200.0},
+            {"id": 11, "y": 100.0, "x": 200.0},
+        ],
+        "edges": [
+            {"from_id": 10, "to_id": 11},
+        ],
+    }
+
+    graph = CampusGraph.from_dict(payload)
+
+    assert graph.to_dict()["edges"] == []
+
+
 def test_from_dict_raises_for_non_dict_payload():
     with pytest.raises(ValueError, match="dictionary"):
         CampusGraph.from_dict([])  # type: ignore[arg-type]

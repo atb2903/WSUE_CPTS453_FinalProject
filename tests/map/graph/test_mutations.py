@@ -41,6 +41,24 @@ def test_move_node_raises_key_error_for_unknown_id():
         graph.move_node(99, y=1.0, x=1.0)
 
 
+def test_move_node_raises_when_target_coordinates_match_other_node():
+    graph = CampusGraph(nodes=[
+        Node(id=0, y=0.0, x=0.0),
+        Node(id=1, y=5.0, x=5.0),
+    ])
+    with pytest.raises(ValueError, match="coordinates"):
+        graph.move_node(0, y=5.0, x=5.0)
+    assert graph.get_node(0).y == 0.0
+    assert graph.get_node(0).x == 0.0
+
+
+def test_move_node_allows_setting_to_current_coordinates():
+    graph = CampusGraph(nodes=[Node(id=0, y=3.0, x=4.0)])
+    graph.move_node(0, y=3.0, x=4.0)
+    assert graph.get_node(0).y == 3.0
+    assert graph.get_node(0).x == 4.0
+
+
 def test_remove_node_removes_node_from_list_and_index():
     graph = CampusGraph(nodes=[Node(id=0, y=0.0, x=0.0), Node(id=1, y=1.0, x=1.0)])
     graph.remove_node(0)

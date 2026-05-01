@@ -25,6 +25,19 @@ def test_add_node_raises_on_duplicate_id():
         graph.add_node(Node(id=0, y=1.0, x=1.0))
 
 
+def test_add_node_raises_when_coordinates_match_existing_node():
+    graph = CampusGraph(nodes=[Node(id=0, y=10.0, x=20.0)])
+    with pytest.raises(ValueError, match="coordinates"):
+        graph.add_node(Node(id=1, y=10.0, x=20.0))
+    assert len(graph.nodes) == 1
+
+
+def test_add_edge_silently_drops_self_loop():
+    graph = CampusGraph()
+    graph.add_edge(Edge(from_id=5, to_id=5))
+    assert graph.edges == []
+
+
 def test_add_edge_appends_edge():
     graph = CampusGraph()
     edge = Edge(from_id=0, to_id=1)

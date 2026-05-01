@@ -43,6 +43,24 @@ def test_map_click_assigns_next_available_id():
     assert new_state.active_node_id == 2
 
 
+def test_map_click_on_existing_node_coords_is_no_op_in_idle():
+    """A bare map-click whose pixel coincides with an existing node must not
+    create a duplicate-coordinate node; the click is consumed and state holds.
+    """
+    graph = CampusGraph(nodes=[Node(id=0, y=10.0, x=20.0)])
+    state = EditState()
+    map_data = {
+        "last_object_clicked": None,
+        "last_object_clicked_tooltip": None,
+        "last_clicked": {"lat": 10.0, "lng": 20.0},
+    }
+    new_state = EditController(graph, state).handle_click(map_data)
+    assert new_state.state == State.IDLE
+    assert new_state.active_node_id is None
+    assert len(graph.nodes) == 1
+    assert new_state.last_map_click == {"lat": 10.0, "lng": 20.0}
+
+
 def test_click_on_non_leaf_node_transitions_to_node_selected(non_leaf_graph):
     """Clicking a node with degree > 1 in IDLE should select it."""
     state = EditState()

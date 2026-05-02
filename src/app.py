@@ -7,6 +7,7 @@ from streamlit_folium import st_folium
 from map.edit_controller import EditController, EditState, State
 from map.graph import CampusGraph
 from map.graph_renderer import GraphOverlayRenderer
+from map.nav_controller import NavController, NavState
 from map.renderer import CampusMapRenderer
 
 _IMAGE_PATH = Path("assets/map.png")
@@ -33,6 +34,8 @@ if "graph" not in st.session_state:
     st.session_state.graph = _load_graph_or_fallback(_GRAPH_PATH)
 if "edit_state" not in st.session_state:
     st.session_state.edit_state = EditState()
+if "nav_state" not in st.session_state:
+    st.session_state.nav_state = NavState()
 if "prev_mode" not in st.session_state:
     st.session_state.prev_mode = None
 
@@ -41,16 +44,53 @@ mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation"
 graph: CampusGraph = st.session_state.graph
 campus_map = CampusMapRenderer(_IMAGE_PATH).build()
 
-# Reset edit state only on the Edit -> Navigation transition so re-entering Edit mode starts clean, without rebuilding state on every Navigation rerun.
+# Reset per-mode state on entry so each mode starts clean without rebuilding state on every rerun.
 if mode == "Navigation" and st.session_state.prev_mode != "Navigation":
     st.session_state.edit_state = EditState()
+if mode == "Edit" and st.session_state.prev_mode != "Edit":
+    st.session_state.nav_state = NavState()
 st.session_state.prev_mode = mode
 
 if mode == "Navigation":
-    st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
+    nav_state: NavState = st.session_state.nav_state
+    st.caption(nav_state.caption)
+
+    has_selection = len(nav_state.selected_node_ids) > 0 or bool(nav_state.path_node_ids)
+    can_pathfind = (
+        len(nav_state.selected_node_ids) == 2 and not nav_state.path_node_ids
+    )
+    deselect_clicked = st.button("Deselect", disabled = not has_selection)
+    pathfind_clicked = st.button("Find Shortest Path", disabled = not can_pathfind)
+
+    if nav_state.pathfind_failed:
+        st.warning("No path exists between the selected nodes.")
+
     fg = folium.FeatureGroup()
-    GraphOverlayRenderer(graph).render_onto(fg)
-    st_folium(campus_map, width = None, height = 760, returned_objects = [], feature_group_to_add = fg)
+    GraphOverlayRenderer(graph).render_onto(
+        fg,
+        highlighted_node_ids = nav_state.highlighted_node_ids,
+        highlighted_edges = nav_state.path_edges,
+    )
+    map_data = st_folium(
+        campus_map,
+        width = None,
+        height = 760,
+        returned_objects = ["last_object_clicked", "last_object_clicked_tooltip"],
+        feature_group_to_add = fg,
+        key = "campus_map_nav",
+    )
+
+    new_nav_state = NavController(graph, nav_state).handle_click(map_data)
+
+    if deselect_clicked:
+        new_nav_state = NavController(graph, new_nav_state).handle_deselect()
+
+    if pathfind_clicked:
+        new_nav_state = NavController(graph, new_nav_state).handle_find_shortest_path()
+
+    if new_nav_state != nav_state:
+        st.session_state.nav_state = new_nav_state
+        st.rerun()
 
 else:  # Edit
     edit_state: EditState = st.session_state.edit_state
@@ -65,11 +105,18 @@ else:  # Edit
         except Exception as error:
             st.error(f"Failed to save graph to {_GRAPH_PATH}: {error}")
 
+    highlighted_node_ids = (
+        (edit_state.active_node_id,) if edit_state.active_node_id is not None else ()
+    )
+    highlighted_edges = (
+        (edit_state.selected_edge,) if edit_state.selected_edge is not None else ()
+    )
+
     fg = folium.FeatureGroup()
     GraphOverlayRenderer(graph).render_onto(
         fg,
-        highlighted_node_id = edit_state.active_node_id,
-        highlighted_edge = edit_state.selected_edge,
+        highlighted_node_ids = highlighted_node_ids,
+        highlighted_edges = highlighted_edges,
     )
     map_data = st_folium(
         campus_map,

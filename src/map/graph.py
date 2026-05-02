@@ -18,11 +18,11 @@ class Edge:
 
 @dataclass
 class CampusGraph:
-    nodes: list[Node] = field(default_factory=list)
-    edges: list[Edge] = field(default_factory=list)
+    nodes: list[Node] = field(default_factory = list)
+    edges: list[Edge] = field(default_factory = list)
     # Internal index for O(1) node lookup; kept in sync by add_node
     _node_index: dict[int, Node] = field(
-        default_factory=dict, init=False, repr=False, compare=False
+        default_factory = dict, init = False, repr = False, compare = False
     )
 
     def __post_init__(self) -> None:
@@ -63,9 +63,9 @@ class CampusGraph:
         ValueError if (y, x) is already taken by a different node.
         """
         existing = self._node_index[node_id]
-        if self._coordinate_in_use(y, x, except_id=node_id):
+        if self._coordinate_in_use(y, x, except_id = node_id):
             raise ValueError(f"Node at coordinates ({y}, {x}) already exists")
-        updated = replace(existing, y=y, x=x)
+        updated = replace(existing, y = y, x = x)
         self.nodes[self.nodes.index(existing)] = updated
         self._node_index[node_id] = updated
 
@@ -77,7 +77,8 @@ class CampusGraph:
 
     def next_node_id(self) -> int:
         """Return the next sequential node id (max existing id + 1, or 0 if empty)."""
-        return max((n.id for n in self.nodes), default=-1) + 1
+        # TODO: this is simple and safe, but is too slow for something used this frequently. Optimize with memoization
+        return max((n.id for n in self.nodes), default = -1) + 1
 
     def degree(self, node_id: int) -> int:
         """Return the number of edges incident to node_id (undirected count)."""
@@ -85,6 +86,8 @@ class CampusGraph:
 
     def remove_node(self, node_id: int) -> None:
         """Remove a node and all its incident edges, raising KeyError if node_id is unknown."""
+        # TODO: streamlit's aggressive reruns sometimes prevent this from finishing on high-degree nodes. 
+        # User can work around by just doing it multiple times, but it's annoying. Find a way to detect and handle this.
         node = self._node_index.pop(node_id)
         self.nodes.remove(node)
         self.edges[:] = [e for e in self.edges if e.from_id != node_id and e.to_id != node_id]
@@ -116,8 +119,8 @@ class CampusGraph:
             raise ValueError("Graph payload must include list fields 'nodes' and 'edges'")
 
         normalized_nodes, normalized_edges = cls._normalize_duplicate_locations(
-            nodes_payload=nodes_payload,
-            edges_payload=edges_payload,
+            nodes_payload = nodes_payload,
+            edges_payload = edges_payload,
         )
 
         graph = cls()
@@ -125,33 +128,35 @@ class CampusGraph:
         for node_payload in normalized_nodes:
             graph.add_node(
                 Node(
-                    id=int(node_payload["id"]),
-                    y=float(node_payload["y"]),
-                    x=float(node_payload["x"]),
+                    id = int(node_payload["id"]),
+                    y = float(node_payload["y"]),
+                    x = float(node_payload["x"]),
                 )
             )
 
         for edge_payload in normalized_edges:
             graph.add_edge(
                 Edge(
-                    from_id=int(edge_payload["from_id"]),
-                    to_id=int(edge_payload["to_id"]),
+                    from_id = int(edge_payload["from_id"]),
+                    to_id = int(edge_payload["to_id"]),
                 )
             )
 
         return graph
 
     def save_to_file(self, path: Path) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+        path.parent.mkdir(parents = True, exist_ok = True)
+        path.write_text(json.dumps(self.to_dict(), indent = 2), encoding = "utf-8")
 
     @classmethod
     def load_from_file(cls, path: Path) -> "CampusGraph":
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding = "utf-8"))
         return cls.from_dict(payload)
 
     @staticmethod
     def _normalize_duplicate_locations(
+        # Node placement detects and prevents this on new nodes, but not on existing nodes.
+        # This method protects against it on loaded graphs, as the protection on node placement was added partway through development.
         nodes_payload: list[dict],
         edges_payload: list[dict],
     ) -> tuple[list[dict[str, float | int]], list[dict[str, int]]]:

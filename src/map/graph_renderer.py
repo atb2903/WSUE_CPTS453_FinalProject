@@ -2,8 +2,8 @@ import folium
 
 from map.graph import CampusGraph
 
-_WSU_GRAY = "#717c7d"
-_WSU_CRIMSON = "#981e32"
+_WSU_GRAY = "#4D4D4D"
+_WSU_CRIMSON = "#A60F2D"
 _NODE_RADIUS = 8
 _EDGE_WEIGHT = 3
 
@@ -39,15 +39,16 @@ class GraphOverlayRenderer:
             from_node = self._graph.get_node(edge.from_id)
             to_node = self._graph.get_node(edge.to_id)
             if from_node is None or to_node is None:
+                # TODO: add a warning to the user instead of silently skipping over the bad edge.
                 continue
             first = min(edge.from_id, edge.to_id)
             second = max(edge.from_id, edge.to_id)
             color = _WSU_CRIMSON if highlighted_edge == (first, second) else _WSU_GRAY
             folium.PolyLine(
-                locations=[[from_node.y, from_node.x], [to_node.y, to_node.x]],
-                color=color,
-                weight=_EDGE_WEIGHT,
-                tooltip=f"edge:{first}-{second}",
+                locations = [[from_node.y, from_node.x], [to_node.y, to_node.x]],
+                color = color,
+                weight = _EDGE_WEIGHT,
+                tooltip = f"edge:{first}-{second}",
             ).add_to(parent)
 
     def _draw_nodes(
@@ -56,10 +57,10 @@ class GraphOverlayRenderer:
         for node in self._graph.nodes:
             color = _WSU_CRIMSON if node.id == highlighted_node_id else _WSU_GRAY
             folium.CircleMarker(
-                location=[node.y, node.x],
-                radius=_NODE_RADIUS,
-                color=color,
-                fill=True,
-                fill_opacity=1.0,
-                tooltip=str(node.id),
+                location = [node.y, node.x],
+                radius = _NODE_RADIUS,
+                color = color,
+                fill = True,
+                fill_opacity = 1.0,
+                tooltip = str(node.id),
             ).add_to(parent)

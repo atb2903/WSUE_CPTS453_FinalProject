@@ -12,8 +12,8 @@ from map.renderer import CampusMapRenderer
 _IMAGE_PATH = Path("assets/map.png")
 _GRAPH_PATH = Path("assets/graph.json")
 
-st.set_page_config(page_title="WSU Map Viewer", layout="wide")
-st.title("WSU Map Viewer")
+st.set_page_config(page_title="WSU GPS", layout="wide")
+st.title("WSU GPS")
 
 if not _IMAGE_PATH.exists():
     st.error(f"Map image not found at: {_IMAGE_PATH}")
@@ -41,8 +41,7 @@ mode = st.segmented_control("Mode", ["Navigation", "Edit"], default="Navigation"
 graph: CampusGraph = st.session_state.graph
 campus_map = CampusMapRenderer(_IMAGE_PATH).build()
 
-# Reset edit state only on the Edit -> Navigation transition so re-entering Edit
-# mode starts clean, without rebuilding state on every Navigation rerun.
+# Reset edit state only on the Edit -> Navigation transition so re-entering Edit mode starts clean, without rebuilding state on every Navigation rerun.
 if mode == "Navigation" and st.session_state.prev_mode != "Navigation":
     st.session_state.edit_state = EditState()
 st.session_state.prev_mode = mode
@@ -51,14 +50,14 @@ if mode == "Navigation":
     st.caption("Pan by dragging and zoom with mouse wheel or +/- controls.")
     fg = folium.FeatureGroup()
     GraphOverlayRenderer(graph).render_onto(fg)
-    st_folium(campus_map, width=None, height=760, returned_objects=[], feature_group_to_add=fg)
+    st_folium(campus_map, width = None, height = 760, returned_objects = [], feature_group_to_add = fg)
 
 else:  # Edit
     edit_state: EditState = st.session_state.edit_state
     st.caption(edit_state.caption)
-    has_selection = edit_state.state in {State.NODE_SELECTED, State.EDGE_SELECTED}
-    deselect_clicked = st.button("Deselect", disabled=not has_selection)
-    delete_clicked = st.button("Delete Selected", disabled=not has_selection)
+    has_selection = edit_state.state in {State.NODE_SELECTED, State.EDGE_SELECTED, State.PENDING_NODE}
+    deselect_clicked = st.button("Deselect", disabled = not has_selection)
+    delete_clicked = st.button("Delete Selected", disabled = not has_selection)
     if st.button("Save Graph"):
         try:
             graph.save_to_file(_GRAPH_PATH)
@@ -69,8 +68,8 @@ else:  # Edit
     fg = folium.FeatureGroup()
     GraphOverlayRenderer(graph).render_onto(
         fg,
-        highlighted_node_id=edit_state.active_node_id,
-        highlighted_edge=edit_state.selected_edge,
+        highlighted_node_id = edit_state.active_node_id,
+        highlighted_edge = edit_state.selected_edge,
     )
     map_data = st_folium(
         campus_map,
@@ -81,6 +80,8 @@ else:  # Edit
         key="campus_map_edit",
     )
 
+    # TODO: add warnings to user on invalid clicks
+
     new_edit_state = EditController(graph, edit_state).handle_click(map_data)
 
     if deselect_clicked:
@@ -89,6 +90,7 @@ else:  # Edit
     if delete_clicked:
         new_edit_state = EditController(graph, new_edit_state).handle_delete_selected()
 
+    # TODO: find a way to reduce/eliminate sequential reruns. They are very slow and annoying to the user (it's me I'm the user and I'm annoyed by it)
     if new_edit_state != edit_state:
         st.session_state.edit_state = new_edit_state
         st.rerun()

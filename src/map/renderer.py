@@ -54,29 +54,29 @@ class CampusMapRenderer:
         Create a folium.Map configured for pixel-coordinate rendering.
 
         Notable configuration decisions:
-        - crs="Simple": disables geo projection; at zoom 0, one map unit
+        - crs = "Simple": disables geo projection; at zoom 0, one map unit
           equals one pixel (per the Leaflet CRS.Simple spec).
-        - tiles=None: no background tile layer; the image overlay is the
+        - tiles = None: no background tile layer; the image overlay is the
           only visual content.
-        - zoom_start=-5: fallback zoom before fit_bounds runs; negative
+        - zoom_start = -5: fallback zoom before fit_bounds runs; negative
           values are required for large images because zoom 0 is native
           pixel resolution (e.g. 13200 x 10200 px would overflow any viewport).
         - minZoom/maxZoom are passed as camelCase kwargs because folium's
           min_zoom/max_zoom parameters target tile layers, not the Leaflet
           Map object itself, and are silently ignored for CRS.Simple maps.
-        - maxZoom=0: allows zooming in to native pixel resolution for
+        - maxZoom = 0: allows zooming in to native pixel resolution for
           building-level detail.
         """
         map_center = [image_height / 2, image_width / 2]
         return folium.Map(
-            location=map_center,
-            tiles=None,
-            zoom_start=-5,
-            zoom_control=True,
-            crs="Simple",
-            prefer_canvas=True,
-            minZoom=-5,
-            maxZoom=0,
+            location = map_center,
+            tiles = None,
+            zoom_start = -5,
+            zoom_control = True,
+            crs = "Simple",
+            prefer_canvas = True,
+            minZoom = -5,
+            maxZoom = 0,
         )
 
     def _add_image_overlay(
@@ -85,16 +85,14 @@ class CampusMapRenderer:
         """
         Attach the campus image as an overlay and fit the viewport to it.
 
-        folium automatically encodes local file paths as base64 data URIs,
-        making the rendered HTML fully self-contained. fit_bounds ensures
-        the full image is visible on load regardless of browser container
-        size, overriding zoom_start once the page renders.
+        fit_bounds ensures the full image is visible on load regardless
+        of browser container size, overriding zoom_start once the page renders.
         """
         ImageOverlay(
-            image=str(self._image_path),
-            bounds=bounds,
-            opacity=1.0,
-            interactive=False,
+            image = str(self._image_path),
+            bounds = bounds,
+            opacity = 1.0,
+            interactive = False,
         ).add_to(campus_map)
 
         campus_map.fit_bounds(bounds)
